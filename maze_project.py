@@ -16,7 +16,7 @@ T = CELL_SIZE*0.1  #Tollerance to componsate line width
 WHITE = (255,255,255)
 BLACK = (20,20,20)
 RED = (255,0,0)
-YELLOW = (133, 138, 12)
+YELLOW = (151, 153, 95)
 BLUE = (4, 5, 43)
 
 # ASSIGNING COLORS 🎨
@@ -53,10 +53,17 @@ count = 0
 
 #Rendering 🎬
 def render_screen():
-    title = pygame.font.Font('freesansbold.ttf', 32)
+    global message
+    xy = (550, 650)
+    si = 32
+    if isExit:
+        xy = (550, 350)
+        message = 'GAME OVER'
+        si = 62
+    title = pygame.font.Font('freesansbold.ttf', si)
     title_text = title.render(message, True, WHITE, BLUE)
     textRect = title_text.get_rect()
-    textRect.center = (550, 650)
+    textRect.center = xy
     screen.blit(title_text, textRect)
     pygame.display.flip()
 
@@ -185,7 +192,8 @@ def solution(xy):
             if not curr.walls[w]:
                 mX, mY = moves[w]
                 x, y = curr.xy
-                pygame.draw.rect(screen, YELLOW, (curr.x_start_pixel+10, curr.y_start_pixel+10, CELL_SIZE - 20, CELL_SIZE - 20))
+                pygame.draw.rect(screen, YELLOW, (curr.x_start_pixel+8, curr.y_start_pixel+8, CELL_SIZE - 16, CELL_SIZE - 16))
+                pygame.time.wait(5)
                 render_screen()
                 if not grid[(x+mX, y+mY)].isSol_visited:
                     for event in pygame.event.get():
@@ -224,9 +232,9 @@ def maze_render():
 next_cell = None
 stack = []
 isCreating = True
-# isCreating = False
 isPlayMode =  False
 running = True
+isExit = False
 
 grid = {}
 # DEFINIG EACH CELL IN THE GRID 🧱
@@ -262,8 +270,6 @@ while running:
             playerX, playerY = (no_columns -1, no_rows -1)
             playerCell = grid[(playerX, playerY)]
             grid[(0,0)].color = WHITE
-            
-
             message = '#MAZE_GAME'
 
 
@@ -271,6 +277,10 @@ while running:
     elif isPlayMode:
         for event in pygame.event.get():
             if event.type == pygame.QUIT or (playerX == 0 and playerY == 0):
+                isExit = True
+                render_screen()
+                time.sleep(4)
+                pygame.time.wait(2000)
                 running = False
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_LEFT or event.key == pygame.K_a:
@@ -286,39 +296,29 @@ while running:
                     playerX, playerY = player_movement((playerX , playerY), 'D')
                     playerCell = grid[(playerX, playerY)]
                 elif event.key in  (pygame.K_LCTRL, pygame.K_RCTRL):
-                    message = '[+]SOLUTION'
+                    message = '[+] SOLVING USING BFS'
                     isPlayMode = False
+                    
                     sol = solution((playerX, playerY))
                     continue
         draw_rect(playerCell.x_start_pixel, playerCell.y_start_pixel)
             
-    else:
+    elif sol:
+        message = '[+] SOLUTION'
         for s in sol[::-1]:
             x, y = s
-            pygame.draw.rect(screen, RED, (grid[(x,y)].x_start_pixel+10, grid[(x,y)].y_start_pixel+10, CELL_SIZE - 20, CELL_SIZE - 20))
-            time.sleep(0.1)
-            pygame.display.update()
+            pygame.draw.rect(screen, YELLOW, (grid[(x,y)].x_start_pixel+10, grid[(x,y)].y_start_pixel+10, CELL_SIZE - 20, CELL_SIZE - 20))
+            time.sleep(0.08)
+            render_screen()
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     quitGame()
 
         running = False
-
+        isExit = True
+        render_screen()
+        time.sleep(4)
+        running = False
+    
     render_screen()
 pygame.quit()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
