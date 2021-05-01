@@ -8,7 +8,7 @@ SCREEN_WIDTH, SCREEN_HIGTH = 1080, 720
 MAZE_WIDTH, MAZE_HIGHT = 750, 500
 #Position the maze center
 MAZE_X, MAZE_Y = (SCREEN_WIDTH - MAZE_WIDTH)/2, ((SCREEN_HIGTH - MAZE_HIGHT)/2) * 0.6
-CELL_SIZE = 50
+CELL_SIZE = 25
 LINE_SIZE = 2
 T = CELL_SIZE*0.1  #Tollerance to componsate line width
 
@@ -61,21 +61,17 @@ def render_screen():
     pygame.display.flip()
 
 #Draws square ⬛
-def draw_rect(x, y, rect_color=RED):
+def draw_rect(x, y, rect_color=PLAYER_COLOR):
     global count
     count += 1
     if isCreating:
         pygame.time.Clock().tick(500)
-        pass
     else:
         pygame.time.Clock().tick(30)
-        pass
-    if isCreating or isPlayMode:
-        maze_render()
     
-    if count%100 == 6:
+    if isPlayMode and count%100 == 6:
         rect_color = BLACK
-    pygame.draw.rect(screen, rect_color, (x+T*1.5, y+T*1.5, CELL_SIZE - T*2.25, CELL_SIZE - T*2.25))
+    pygame.draw.rect(screen, rect_color, (x+T, y+T, CELL_SIZE - T*2, CELL_SIZE - T*2))
 
 # Cell class🔲
 class Cell():
@@ -94,7 +90,6 @@ class Cell():
         self.isCurrent = False
         self.walls = {'U': True, 'R': True, 'D': True, 'L': True,}
         self.color = MAZE_COLOR
-        self.playerFootPrint = False
 
         # CELL CORNOR PIXEL POSTIONS 🚩
         self.left_top_pos = (self.x_start_pixel, self.y_start_pixel)
@@ -105,13 +100,10 @@ class Cell():
         #SOLUTION STUFFS
         self.isSol_visited = False
         self.sol_parent = None
-        self.isSlo_show = False
+        #To show the solution
 
     def draw_cell(self): #🎨
         if self.isVisited:
-                
-            pygame.draw.rect(screen, self.color, (self.x_start_pixel+T*1.5, self.y_start_pixel+T*1.5, CELL_SIZE-T*2.5, CELL_SIZE-T*2.5))
-            # draw_rect(self.x_start_pixel, self.y_start_pixel, rect_color=self.color)
             if self.walls['U']: 
                 x,y = self.left_top_pos, self.right_top_pos
                 pygame.draw.line(screen, LINE_COLOR, x, y, width=LINE_SIZE)
@@ -129,9 +121,7 @@ class Cell():
             self.isVisited = True
             self.isCurrent = False
             draw_rect(self.x_start_pixel, self.y_start_pixel)
-        if self.isSlo_show:
-            draw_rect(self.x_start_pixel,self.y_start_pixel)
-            print('isslow')
+        
 
     #👈
     def chose_one_neightbour(self):  
@@ -159,9 +149,10 @@ def player_movement(xy, keyPress):
         return xy
     message =  '#MAZE_GAME'
     mX, mY = moves[keyPress]
-    x, y = x+mX, y+mY
     last = wall_counter[keyPress]
-    draw_rect(grid[(x,y)].x_start_pixel, grid[(x,y)].y_start_pixel)
+    draw_rect(grid[(x,y)].x_start_pixel, grid[(x,y)].y_start_pixel, rect_color=MAZE_COLOR)
+    x, y = x+mX, y+mY
+    draw_rect(grid[(x,y)].x_start_pixel, grid[(x,y)].y_start_pixel, rect_color=PLAYER_COLOR)
     render_screen()
 
     while True:
@@ -171,10 +162,12 @@ def player_movement(xy, keyPress):
                 poss_moves.append(w)
         if len(poss_moves) == 1:
             mX, mY = moves[poss_moves[0]]
+            draw_rect(grid[(x,y)].x_start_pixel, grid[(x,y)].y_start_pixel, rect_color=MAZE_COLOR)
             x, y = x+mX, y+mY
+            draw_rect(grid[(x,y)].x_start_pixel, grid[(x,y)].y_start_pixel, rect_color=PLAYER_COLOR)
             last = wall_counter[poss_moves[0]]
             render_screen()
-            draw_rect(grid[(x,y)].x_start_pixel, grid[(x,y)].y_start_pixel)
+        
             
         else:
             if len(poss_moves) < 1:
@@ -192,10 +185,17 @@ def solution(xy):
             if not curr.walls[w]:
                 mX, mY = moves[w]
                 x, y = curr.xy
+                pygame.draw.rect(screen, YELLOW, (curr.x_start_pixel+10, curr.y_start_pixel+10, CELL_SIZE - 20, CELL_SIZE - 20))
+                render_screen()
                 if not grid[(x+mX, y+mY)].isSol_visited:
+                    for event in pygame.event.get():
+                        if event.type == pygame.QUIT:
+                            quitGame()
                     grid[(x+mX, y+mY)].sol_parent = curr.xy
                     grid[(x+mX, y+mY)].isSol_visited =  True
                     stack.append(grid[(x+mX, y+mY)])
+    maze_render()
+    render_screen()
     sol = []
     sol.append((0,0))
     sX, sY = (0,0)
@@ -221,12 +221,6 @@ def maze_render():
     pygame.draw.line(screen, BLACK, (x, y+CELL_SIZE), (x+CELL_SIZE,y))
 
 
-
-
-
-
-
-
 next_cell = None
 stack = []
 isCreating = True
@@ -240,6 +234,7 @@ for x in range(no_columns):
     for y in range(no_rows):
         grid[(x,y)] = Cell((x,y))
 current_cell = grid[(0,0)]
+sol = []
 
 
 #🏃‍♂️ 
@@ -294,17 +289,21 @@ while running:
                     message = '[+]SOLUTION'
                     isPlayMode = False
                     sol = solution((playerX, playerY))
+                    continue
         draw_rect(playerCell.x_start_pixel, playerCell.y_start_pixel)
             
-    elif sol:
-        grid[sol.pop()].isSlo_show = True
-        print('sol')
-        continue
     else:
+        for s in sol[::-1]:
+            x, y = s
+            pygame.draw.rect(screen, RED, (grid[(x,y)].x_start_pixel+10, grid[(x,y)].y_start_pixel+10, CELL_SIZE - 20, CELL_SIZE - 20))
+            time.sleep(0.1)
+            pygame.display.update()
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    quitGame()
+
         running = False
 
-        
-    
     render_screen()
 pygame.quit()
 
