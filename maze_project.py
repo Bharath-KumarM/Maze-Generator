@@ -8,7 +8,7 @@ SCREEN_WIDTH, SCREEN_HIGTH = 1080, 720
 MAZE_WIDTH, MAZE_HIGHT = 750, 500
 #Position the maze center
 MAZE_X, MAZE_Y = (SCREEN_WIDTH - MAZE_WIDTH)/2, ((SCREEN_HIGTH - MAZE_HIGHT)/2) * 0.6
-CELL_SIZE = 25
+CELL_SIZE = 50
 LINE_SIZE = 2
 T = CELL_SIZE*0.1  #Tollerance to componsate line width
 
